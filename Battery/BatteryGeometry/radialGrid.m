@@ -64,8 +64,6 @@ function output = radialGrid(params)
            nrDict('NegativeActiveMaterial'); ...
            nrDict('ElectrolyteSeparator')];
 
-
-
     %% Grid setup
     
     layerwidth = sum(widths);
@@ -157,7 +155,6 @@ function output = radialGrid(params)
     gen.mergefds = {'indi2', 'indj2'};
 
     face2tbl = gen.eval();
-
 
     %% We setup the new indexing for the nodes
 

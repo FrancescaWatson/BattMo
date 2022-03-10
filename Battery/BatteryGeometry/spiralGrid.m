@@ -23,7 +23,7 @@ function output = spiralGrid(params)
     % - tagdict : dictionary giving the component number
     
     nwindings = params.nwindings;
-    rInner        = params.rInner;
+    rInner    = params.rInner;
     widthDict = params.widthDict ;
     nrDict    = params.nrDict;
     nas       = params.nas;
@@ -31,12 +31,11 @@ function output = spiralGrid(params)
     nL        = params.nL;
     unifang   = params.angleuniform;
     tabparams = params.tabparams;
-
     
     tabcase = tabparams.tabcase;
     
     usetab = false;
-    if ~strcmp('no tab', tabcase)
+    if ~strcmp('tabless', tabcase)
         usetab = true;
     end
         
@@ -454,7 +453,6 @@ function output = spiralGrid(params)
     extfacetbl.faces = find(any(G.faces.neighbors == 0, 2));
     extfacetbl = IndexArray(extfacetbl);
     extcellfacetbl = crossIndexArray(extfacetbl, cellfacetbl, {'faces'});
-    
     
     %%  recover the external faces that are inside the spiral
     % We get them using the Cartesian indexing
