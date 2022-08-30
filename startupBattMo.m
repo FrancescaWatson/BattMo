@@ -6,8 +6,6 @@
 % 
 rootdirname = fileparts(mfilename('fullpath'));
 
-mrstSettings('set', 'useMEX', false);
-
 run(fullfile(rootdirname, 'MRST/mrst-core/startup'));
 
 names = {'autodiff', ...
