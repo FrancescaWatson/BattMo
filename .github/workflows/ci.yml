@@ -31,5 +31,6 @@ jobs:
         uses: matlab-actions/run-command@v1
         with:
           #command: startupBattMo; results = runtests('Tests', 'IncludeSubfolders', true); assertSuccess(results);
-          command: disp('hello world')
+          #command: disp('hello world')
+          command: startupBattMo; disp('hello world')
       
