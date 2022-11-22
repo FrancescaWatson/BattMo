@@ -29,7 +29,9 @@ jobs:
           submodules: recursive
 
       - name: Checkout submodule branch
-        run: git submodule update --init --recursive --remote
+        run: |
+	   git submodule sync
+	   git submodule update --init --recursive --remote
 
       # Sets up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
