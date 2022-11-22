@@ -1,41 +1,29 @@
 classdef TestChen2020 < matlab.unittest.TestCase
 
-    properties (TestParameter)
-
-    end
-    
     methods
 
-        function test = TestChen2020()
-            mrstModule reset
-            mrstModule add ad-core mrst-gui mpfa
-        end
         
         function states = testchen2020(test)
             
-        % The input parameters can be given in json format. The json file is read and used to populate the paramobj object.
-            jsonstruct = parseBattmoJson('ParameterData/ParameterSets/Chen2020/chen2020_lithium_ion_battery.json');
+            jsonstruct = parseBattmoJson(fullfile('ParameterData','ParameterSets','Chen2020','chen2020_lithium_ion_battery.json'));
 
             paramobj = BatteryInputParams(jsonstruct);
-
+            paramobj.include_current_collectors = false;
+            paramobj = paramobj.validateInputParams();
+            
             % Some shorthands used for the sub-models
             ne    = 'NegativeElectrode';
             pe    = 'PositiveElectrode';
             am    = 'ActiveMaterial';
+            itf   = 'Interface';
             sd    = 'SolidDiffusion';
             elyte = 'Electrolyte';
-
+            ctrl  = 'Control';
+            
             %% We setup the battery geometry ("bare" battery with no current collector).
             gen = BareBatteryGenerator3D();
             % We update pamobj with grid data
             paramobj = gen.updateBatteryInputParams(paramobj);
-
-            paramobj.(ne).(am).InterDiffusionCoefficient = 0;
-            paramobj.(pe).(am).InterDiffusionCoefficient = 0;
-
-            paramobj.(ne).(am).(sd).useSimplifiedDiffusionModel = false;
-            paramobj.(pe).(am).(sd).useSimplifiedDiffusionModel = false;
-
 
             %%  The Battery model is initialized by sending paramobj to the Battery class constructor 
 
@@ -61,8 +49,6 @@ classdef TestChen2020 < matlab.unittest.TestCase
             % We set up a stopping function. Here, the simulation will stop if the output voltage reach a value smaller than 2. This
             % stopping function will not be triggered in this case as we switch to voltage control when E=3.6 (see value of inputE
             % below).
-            pe = 'PositiveElectrode';
-            cc = 'CurrentCollector';
 
             tup = 0.1; % rampup value for the current function, see rampupSwitchControl
             srcfunc = @(time, I, E) rampupSwitchControl(time, tup, I, E, ...
@@ -81,12 +67,6 @@ classdef TestChen2020 < matlab.unittest.TestCase
             initstate.ThermalModel.T = T*ones(nc, 1);
 
             bat = model;
-            elyte = 'Electrolyte';
-            ne    = 'NegativeElectrode';
-            pe    = 'PositiveElectrode';
-            itf   = 'Interface';
-            sd    = 'SolidDiffusion';
-            ctrl  = 'Control';
 
             initstate = model.updateTemperature(initstate);
 
@@ -95,7 +75,7 @@ classdef TestChen2020 < matlab.unittest.TestCase
 
             % We bypass the solid diffusion equation to set directly the particle surface concentration
             c = 29866.0;
-            if model.(ne).(am).useSimplifiedDiffusionModel
+            if strcmp(model.(ne).(am).diffusionModelType, 'simple')
                 nenp = model.(ne).(am).G.cells.num;
                 initstate.(ne).(am).c = c*ones(nenp, 1);
             else
@@ -119,7 +99,7 @@ classdef TestChen2020 < matlab.unittest.TestCase
 
             c = 17038.0;
 
-            if model.(pe).(am).useSimplifiedDiffusionModel
+            if strcmp(model.(pe).(am).diffusionModelType, 'simple')
                 penp = model.(pe).(am).G.cells.num;
                 initstate.(pe).(am).c = c*ones(penp, 1);
             else
@@ -151,6 +131,25 @@ classdef TestChen2020 < matlab.unittest.TestCase
             nls.maxIterations = 10; 
             % Change default behavior of nonlinear solver, in case of error
             nls.errorOnFailure = false; 
+            linearsolver = 'direct';
+            switch linearsolver
+              case 'agmg'
+                mrstModule add agmg
+                nls.LinearSolver = AGMGSolverAD('verbose', true, 'reduceToCell', true); 
+                nls.LinearSolver.tolerance = 1e-3; 
+                nls.LinearSolver.maxIterations = 30; 
+                nls.maxIterations = 10; 
+                nls.verbose = 10;
+              case 'battery'
+                %nls.LinearSolver = LinearSolverBatteryExtra('verbose', false, 'reduceToCell', true,'verbosity',3,'reuse_setup',false,'method','matlab_p_gs');
+                nls.LinearSolver = LinearSolverBatteryExtra('verbose', false, 'reduceToCell', false,'verbosity',3,'reuse_setup',false,'method','direct');
+                nls.LinearSolver.tolerance=0.5e-4*2;          
+              case 'direct'
+                disp('standard direct solver')
+              otherwise
+                error()
+            end
+
             % Change default tolerance for nonlinear solver
             model.nonlinearTolerance = 1e-5; 
             % Set verbosity
@@ -160,13 +159,6 @@ classdef TestChen2020 < matlab.unittest.TestCase
 
             % Run simulation
             [wellSols, states, report] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls); 
-
-            %%  We process output and recover the output voltage and current from the output states.
-            ind = cellfun(@(x) not(isempty(x)), states); 
-            states = states(ind);
-            Enew = cellfun(@(x) x.(ctrl).E, states); 
-            Inew = cellfun(@(x) x.(ctrl).I, states);
-            time = cellfun(@(x) x.time, states); 
 
         end
         
@@ -192,7 +184,7 @@ classdef TestChen2020 < matlab.unittest.TestCase
             pb = interp1(t1, u1, x);
             battmo = interp1(time, Enew, x);
 
-            assert(norm(pb - battmo) / norm(pb) < 0.0022);
+            assert(norm(pb - battmo) / norm(pb) < 0.00285);
         end
         
     end

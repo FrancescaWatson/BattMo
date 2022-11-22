@@ -6,7 +6,7 @@
 % 
 rootdirname = fileparts(mfilename('fullpath'));
 
-run(fullfile(rootdirname, 'MRST/mrst-core/startup'));
+run(fullfile(rootdirname, 'MRST', 'mrst-core',  'startup'));
 
 names = {'autodiff', ...
          'solvers', ...
@@ -19,8 +19,13 @@ names = cellfun(@(x) fullfile(ROOTDIR, '..', ['mrst-', x]), names, ...
 
 mrstPath('addroot', names{:});
 
-%% The open source code of the 2012 version of AGMG is also available as a submodule in the directory ``Externals/agmg/``
-mrstPath('register', 'agmg', fullfile(rootdirname, 'Externals/agmg/'));
+%% Register external modules
+
+% The open source code of the 2012 version of AGMG is also available as a submodule in the directory ``Externals/agmg/``
+mrstPath('register', 'agmg', fullfile(rootdirname, 'Externals', 'agmg'));
+
+% The UPR module, which is used for meshing, is available in ``Externals/upr``
+mrstPath('register', 'upr', fullfile(rootdirname, 'Externals', 'upr'));
 
 %% The BattMo source code directories are now added directly to path
 
@@ -35,7 +40,7 @@ end
 if mrstPlatform('octave')
 
     % Octave MRST settings
-    run('./MRST/mrst-core/utils/octave_only/startup_octave.m');
+    run(fullfile('MRST', 'mrst-core', 'utils', 'octave_only', 'startup_octave.m'));
 
     % Disable warnings
     warning('off', 'Octave:possible-matlab-short-circuit-operator');

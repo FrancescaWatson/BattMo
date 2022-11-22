@@ -20,14 +20,32 @@ mrstModule add ad-core mrst-gui mpfa
 % throughout the submodels. The input parameters can be set manually or
 % provided in json format. All the parameters for the model are stored in
 % the paramobj object.
-jsonstruct = parseBattmoJson('ParameterData/BatteryCellParameters/LithiumIonBatteryCell/lithium_ion_battery_nmc_graphite.json');
+
+jsonstruct = parseBattmoJson(fullfile('ParameterData','BatteryCellParameters','LithiumIonBatteryCell','lithium_ion_battery_nmc_graphite.json'));
+
+% We define some shorthand names for simplicity.
+ne      = 'NegativeElectrode';
+pe      = 'PositiveElectrode';
+elyte   = 'Electrolyte';
+thermal = 'ThermalModel';
+am      = 'ActiveMaterial';
+itf     = 'Interface';
+sd      = 'SolidDiffusion';
+ctrl    = 'Control';
+cc      = 'CurrentCollector';
+
+jsonstruct.use_thermal = true;
+jsonstruct.include_current_collector = false;
+jsonstruct.(pe).(am).diffusionModelType = 'simple';
+jsonstruct.(ne).(am).diffusionModelType = 'simple';
+
 paramobj = BatteryInputParams(jsonstruct);
 
 use_cccv = false;
 if use_cccv
     cccvstruct = struct( 'controlPolicy'     , 'CCCV',  ...
                          'CRate'             , 1         , ...
-                         'lowerCutoffVoltage', 2         , ...
+                         'lowerCutoffVoltage', 2.4       , ...
                          'upperCutoffVoltage', 4.1       , ...
                          'dIdtLimit'         , 0.01      , ...
                          'dEdtLimit'         , 0.01);
@@ -35,18 +53,6 @@ if use_cccv
     paramobj.Control = cccvparamobj;
 end
 
-% paramobj.include_current_collectors = true;
-% paramobj.use_solid_diffusion = false;
-% paramobj.use_thermal = true;
-
-% We define some shorthand names for simplicity.
-ne      = 'NegativeElectrode';
-pe      = 'PositiveElectrode';
-elyte   = 'Electrolyte';
-thermal = 'ThermalModel';
-itf     = 'Interface';
-sd      = 'SolidDiffusion';
-ctrl    = 'Control';
 
 %% Setup the geometry and computational mesh
 % Here, we setup the 1D computational mesh that will be used for the
@@ -62,6 +68,15 @@ paramobj = gen.updateBatteryInputParams(paramobj);
 % constructor. see :class:`Battery <Battery.Battery>`.
 model = Battery(paramobj);
 model.AutoDiffBackend= AutoDiffBackend();
+
+inspectgraph = false;
+if inspectgraph
+    % plot the computational graph
+    cgt = ComputationalGraphTool(model);
+    cgt.getComputationalGraph('doplot', true);
+    return
+end
+
 
 %% Compute the nominal cell capacity and choose a C-Rate
 % The nominal capacity of the cell is calculated from the active materials.
@@ -83,9 +98,9 @@ switch model.(ctrl).controlPolicy
     error('control policy not recognized');
 end
 
-n     = 100;
-dt    = total/n;
-step  = struct('val', dt*ones(n, 1), 'control', ones(n, 1));
+n  = 100;
+dt = total/n;
+step = struct('val', dt*ones(n, 1), 'control', ones(n, 1));
 
 % we setup the control by assigning a source and stop function.
 % control = struct('CCCV', true); 
@@ -109,16 +124,39 @@ end
 schedule = struct('control', control, 'step', step); 
 
 %% Setup the initial state of the model
-% The initial state of the model is dispatched using the
-% model.setupInitialState()method. 
+% The initial state of the model is setup using the model.setupInitialState() method.
+
 initstate = model.setupInitialState(); 
 
 %% Setup the properties of the nonlinear solver 
-nls = NonLinearSolver(); 
+nls = NonLinearSolver();
+
+linearsolver = 'battery';
+switch linearsolver
+  case 'agmg'
+    mrstModule add agmg
+    nls.LinearSolver = AGMGSolverAD('verbose', true, 'reduceToCell', false); 
+    nls.LinearSolver.tolerance = 1e-3; 
+    nls.LinearSolver.maxIterations = 30; 
+    nls.maxIterations = 10; 
+    nls.verbose = 10;
+  case 'battery'
+    nls.LinearSolver = LinearSolverBatteryExtra('verbose'     , false, ...
+                                                'reduceToCell', false, ...
+                                                'verbosity'   , 3    , ...
+                                                'reuse_setup' , false, ...
+                                                'method'      , 'direct');
+    nls.LinearSolver.tolerance = 0.5e-4*2;          
+  case 'direct'
+    disp('standard direct solver')
+  otherwise
+    error()
+end
+
 % Change default maximum iteration number in nonlinear solver
-nls.maxIterations = 10; 
+nls.maxIterations = 10;
 % Change default behavior of nonlinear solver, in case of error
-NLS.errorOnFailure = false; 
+nls.errorOnFailure = false;
 nls.timeStepSelector=StateChangeTimeStepSelector('TargetProps', {{'Control','E'}}, 'targetChangeAbs', 0.03);
 % Change default tolerance for nonlinear solver
 model.nonlinearTolerance = 1e-3*model.Control.Imax;
@@ -131,14 +169,14 @@ model.verbose = true;
 %% Process output and recover the output voltage and current from the output states.
 ind = cellfun(@(x) not(isempty(x)), states); 
 states = states(ind);
-Enew = cellfun(@(x) x.Control.E, states); 
-Inew = cellfun(@(x) x.Control.I, states);
+E = cellfun(@(x) x.Control.E, states); 
+I = cellfun(@(x) x.Control.I, states);
 Tmax = cellfun(@(x) max(x.ThermalModel.T), states);
-[SOCN, SOCP] =  cellfun(@(x) model.calculateSOC(x), states);
+% [SOCN, SOCP] =  cellfun(@(x) model.calculateSOC(x), states);
 time = cellfun(@(x) x.time, states); 
 
 %% Plot the the output voltage and current
-plotDashboard(model, states, 'step', 0);
+% plotDashboard(model, states, 'step', 0);
 
 %{
 Copyright 2021-2022 SINTEF Industry, Sustainable Energy Technology

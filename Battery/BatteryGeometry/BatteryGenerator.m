@@ -1,13 +1,10 @@
 classdef BatteryGenerator
-% Object that add grids and coupling terms to a paramobj instance of BatteryInputParams (through method 
+% Base class that add grids and coupling terms to a paramobj instance of BatteryInputParams (through method 
 % updateBatteryInputParams)
 %
-% This class goes through the whole setup and is meant to be used as a base class.
+% This class goes through the whole grid setup and is meant to be used as a base class.
 %
-% This class (or rather an subclass of it) can also be used to setup values of the paramobj instance that is sent to it
-% (just overload the updateBatteryInputParams method by adding the desired setup)
-%
-% Example : BatteryGenerator1D.m, BatteryGenerator2D.m
+% Example : BatteryGenerator1D.m, BatteryGenerator2D.m, BatteryGenerator3D
 
     properties
         % Global grid 
@@ -27,10 +24,20 @@ classdef BatteryGenerator
         function [paramobj, gen] = setupBatteryInputParams(gen, paramobj, params)
         % main function : add grid and coupling to paramobj structure
             [paramobj, gen] = gen.setupGrid(paramobj, params);
-            paramobj.Electrolyte = gen.setupElectrolyte(paramobj.Electrolyte, params);
+            % We check if params contains some Electrolyte field 
+            if isfield(params, 'Electrolyte')
+                params_electrolyte = params.Electrolyte;
+            else
+                params_electrolyte = [];
+            end
+            paramobj.Electrolyte = gen.setupElectrolyte(paramobj.Electrolyte, params_electrolyte);
             paramobj = gen.setupElectrodes(paramobj, params);
             if gen.use_thermal
-                paramobj = gen.setupThermalModel(paramobj, params);
+                params_thermal = [];
+                if isfield(params, 'ThermalModel')
+                    params_thermal = params.ThermalModel;
+                end
+                paramobj = gen.setupThermalModel(paramobj, params_thermal);
             end
             paramobj = gen.setupElectrodeElectrolyteCoupTerm(paramobj);
         end
@@ -80,16 +87,12 @@ classdef BatteryGenerator
             ne = 'NegativeElectrode';
             pe = 'PositiveElectrode';
             eldes = {ne, pe};
-            for ielde = 1 : numel(eldes)
-                elde = eldes{ielde};
-                if isempty(paramobj.(elde).include_current_collector)
-                    if paramobj.include_current_collectors
-                        paramobj.(elde).include_current_collector = true;
-                    else
-                        paramobj.(elde).include_current_collector = false;
-                    end
-                end
-            end
+
+            % We add the electrode type to the params structure (This information can be used by derived classes and may
+            % then simplify setup)
+            params.(ne).electrodeType = ne;
+            params.(pe).electrodeType = pe;
+            
             % setup Negative Electrode
             paramobj.(ne) = gen.setupElectrode(paramobj.(ne), params.(ne));
             % setup Positive Electrode
@@ -103,7 +106,7 @@ classdef BatteryGenerator
         
             % shorthands 
             am = 'ActiveMaterial';
-            cc  = 'CurrentCollector';            
+            cc = 'CurrentCollector';
             
             % setup Electrode grid
             paramobj = gen.setupElectrodeGrid(paramobj, params);
@@ -111,6 +114,9 @@ classdef BatteryGenerator
             paramobj.(am) = gen.setupActiveMaterialGrid(paramobj.(am), params.(am));
             % setup current collector (cc)
             if paramobj.include_current_collector
+                % We add the electrode type to the params structure. (This information can be used by derived classes
+                % and may then simplify setup)
+                params.(cc).electrodeType = params.electrodeType;
                 paramobj.(cc) = gen.setupCurrentCollector(paramobj.(cc), params.(cc));
                 % setup coupling term between am and cc
                 paramobj = gen.setupCurrentCollectorActiveMaterialCoupTerm(paramobj, params);

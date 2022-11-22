@@ -20,7 +20,9 @@ classdef BareBatteryGenerator3D < BatteryGenerator
         end
             
         function paramobj = updateBatteryInputParams(gen, paramobj)
-            paramobj.include_current_collectors = false;
+            if paramobj.include_current_collectors
+                warning('This geometry does not include current collectors but input data has been given for those');
+            end
             paramobj = gen.setupBatteryInputParams(paramobj, []);
         end
         
@@ -98,14 +100,20 @@ classdef BareBatteryGenerator3D < BatteryGenerator
             % boundary setup for positive electode
             params.(pe).(am).bcfaces = penx + 1;
             params.(pe).(am).bccells = penx;
-            
-            paramobj = setupElectrodes@BatteryGenerator(gen, paramobj, params);
-            
-            paramobj.(ne).(am).(sd).N  = gen.nenr;
-            paramobj.(ne).(am).(sd).np = gen.nenx;
-            paramobj.(pe).(am).(sd).N  = gen.penr;
-            paramobj.(pe).(am).(sd).np = gen.penx;
 
+            paramobj = setupElectrodes@BatteryGenerator(gen, paramobj, params);
+
+            % N and np are parameters for the full diffusion model
+            if strcmp(paramobj.(ne).(am).diffusionModelType, 'full')
+                paramobj.(ne).(am).(sd).N  = gen.nenr;
+                paramobj.(ne).(am).(sd).np = gen.nenx;
+            end
+            
+            if strcmp(paramobj.(pe).(am).diffusionModelType, 'full')
+                paramobj.(pe).(am).(sd).N  = gen.penr;
+                paramobj.(pe).(am).(sd).np = gen.penx;
+            end
+            
         end
                 
     end

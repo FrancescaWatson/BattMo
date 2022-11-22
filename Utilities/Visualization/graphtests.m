@@ -4,7 +4,7 @@ close all
 
 mrstModule add ad-core mpfa
 
-jsonstruct = parseBattmoJson('ParameterData/ParameterSets/Chen2020/chen2020_lithium_ion_battery.json');
+jsonstruct = parseBattmoJson(fullfile('ParameterData', 'ParameterSets', 'Chen2020', 'chen2020_lithium_ion_battery.json'));
 
 paramobj = BatteryInputParams(jsonstruct);
 
@@ -15,34 +15,29 @@ am    = 'ActiveMaterial';
 sd    = 'SolidDiffusion';
 itf   = 'Interface';
 elyte = 'Electrolyte';
+sei   = 'SolidElectrodeInterface';
+sr    = 'SideReaction';
+            
+% paramobj.(ne).(am).diffusionModelType = 'full';
+% paramobj.(pe).(am).diffusionModelType = 'full';
+            
 
-paramobj.(ne).(am).(sd).useSimplifiedDiffusionModel = false;
-paramobj.(pe).(am).(sd).useSimplifiedDiffusionModel = false;
 
-
-gen = BareBatteryGenerator3D();
+gen = BatteryGenerator1D();
 paramobj = gen.updateBatteryInputParams(paramobj);
 model = Battery(paramobj);
 
-submodel = model.NegativeElectrode.ActiveMaterial.Interface.registerVarAndPropfuncNames();
-% submodel = model.NegativeElectrode.ActiveMaterial.registerVarAndPropfuncNames();
-% submodel = model.Electrolyte.registerVarAndPropfuncNames();
+cgt = ComputationalGraphTool(model);
 
-[g, edgelabels] = setupGraph(submodel);
+cgt.includeNodeNames = 'Negati.*Int.*R';
 
-cgf = ComputationalGraphFilter(g);
-cgf.includeNodeNames = [];
-
-g = cgf.setupGraph();
+[g, edgelabels] = cgt.getComputationalGraph();
 
 figure
-h = plot(g, 'nodefontsize', 18);
+% h = plot(g, 'edgelabel', edgelabels, 'nodefontsize', 10);
+h = plot(g, 'nodefontsize', 10);
 
-doaddlabel = false;
-if doaddlabel
-    labeledge(h, (1 : g.numedges), edgelabels);
-end
-
+return
 
 
 
@@ -51,6 +46,7 @@ end
 Copyright 2021-2022 SINTEF Industry, Sustainable Energy Technology
 and SINTEF Digital, Mathematics & Cybernetics.
 
+  
 This file is part of The Battery Modeling Toolbox BattMo
 
 BattMo is free software: you can redistribute it and/or modify

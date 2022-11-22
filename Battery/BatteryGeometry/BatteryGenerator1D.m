@@ -2,17 +2,31 @@ classdef BatteryGenerator1D < BatteryGenerator
 % setup 1D grid 
     properties
         
-        sepnx  = 10;
-        nenx   = 10;
-        penx   = 10;
-        nenr   = 10; % discretization for solid diffusion
-        penr   = 10; % discretization for solid diffusion
-        ccnenx = 10;
-        ccpenx = 10;
+        xlength = 1e-6*[25; 64; 15; 57; 15]; % length of components in x direction - default values
+                                             % x(1) : length of negative current collector
+                                             % x(2) : length of negative activie material
+                                             % x(3) : length of separator
+                                             % x(4) : length of positive current collector
+                                             % x(5) : length of positive activie material
+
+        sepnx  = 10; % discretization number for negative current collector - default value
+        nenx   = 10; % discretization number for negative activie material  - default value
+        penx   = 10; % discretization number for separator                  - default value
+        nenr   = 10; % discretization for solid diffusion                   - default value
+        penr   = 10; % discretization for solid diffusion                   - default value
+        ccnenx = 10; % discretization number for positive current collector - default value
+        ccpenx = 10; % discretization number for positive activie material  - default value
+
+        % refinement factor (can be used to easily increase discretization refinement)
+        % see applyResolutionFactors method
         fac = 1;
 
+        % flag : true if grid for current collectors should be included
         include_current_collectors
+        % flag : true if grid for thermal model should be included
         use_thermal
+
+        faceArea = 1; 
         
     end
     
@@ -23,11 +37,40 @@ classdef BatteryGenerator1D < BatteryGenerator
         end
             
         function paramobj = updateBatteryInputParams(gen, paramobj)
+
             gen.include_current_collectors = paramobj.include_current_collectors;
             gen.use_thermal = paramobj.use_thermal;
             paramobj = gen.setupBatteryInputParams(paramobj, []);
+
+            % We define some shorthand names for simplicity.
+            ne      = 'NegativeElectrode';
+            pe      = 'PositiveElectrode';
+            elyte   = 'Electrolyte';
+            sep     = 'Separator';
+            thermal = 'ThermalModel';
+            am      = 'ActiveMaterial';
+            cc      = 'CurrentCollector';
+
+            % we update all the grids to adjust grid to faceArea
+            paramobj.G               = gen.adjustGridToFaceArea(paramobj.G);
+            paramobj.(elyte).G       = gen.adjustGridToFaceArea(paramobj.(elyte).G);
+            paramobj.(elyte).(sep).G = gen.adjustGridToFaceArea(paramobj.(elyte).(sep).G);
+            
+            eldes = {ne, pe};
+            for ielde = 1 : numel(eldes)
+                elde = eldes{ielde};
+                paramobj.(elde).(am).G = gen.adjustGridToFaceArea(paramobj.(elde).(am).G);
+                if gen.include_current_collectors
+                    paramobj.(elde).(cc).G = gen.adjustGridToFaceArea(paramobj.(elde).(cc).G);
+                end
+            end
+            
+            if gen.use_thermal
+                paramobj.(thermal).G = gen.adjustGridToFaceArea(paramobj.(thermal).G);                
+            end
+            
         end
-        
+
         function [paramobj, gen] = setupGrid(gen, paramobj, ~)
         % paramobj is instance of BatteryInputParams
         % setup paramobj.G
@@ -38,14 +81,14 @@ classdef BatteryGenerator1D < BatteryGenerator
             ccnenx = gen.ccnenx;
             ccpenx = gen.ccpenx;
 
-            
+            xlength = gen.xlength;
+
             if gen.include_current_collectors
                 nxs = [ccnenx; nenx; sepnx; penx; ccpenx];
                 % standard length (could be moved to a paramobj geometrical field)
-                xlength = 1e-6*[25, 64, 15, 57, 15]';
             else
                 nxs = [nenx; sepnx; penx];
-                xlength = 1e-6*[64, 15, 57]';
+                xlength = xlength(2 : 4);
             end
             
             x = xlength./nxs;
@@ -54,7 +97,7 @@ classdef BatteryGenerator1D < BatteryGenerator
 
             G = tensorGrid(x);
             G = computeGeometry(G); 
-
+            
             paramobj.G = G;
             gen.G = G;
             
@@ -67,10 +110,10 @@ classdef BatteryGenerator1D < BatteryGenerator
             gen.sepnx  = gen.sepnx*fac;
             gen.nenx   = gen.nenx*fac;
             gen.penx   = gen.penx*fac;
-            if gen.include_current_collectors
-                gen.ccnenx = gen.ccnenx*fac;
-                gen.ccpenx = gen.ccpenx*fac;
-            end
+            %if gen.include_current_collectors
+            gen.ccnenx = gen.ccnenx*fac;
+            gen.ccpenx = gen.ccpenx*fac;
+            %end
             
         end
             
@@ -156,8 +199,19 @@ classdef BatteryGenerator1D < BatteryGenerator
             params.couplingcells = (1 : gen.G.cells.num)';
             paramobj = setupThermalModel@BatteryGenerator(gen, paramobj, params);
         end
+
+        function G = adjustGridToFaceArea(gen, G);
+            
+            fa = gen.faceArea;
+
+            G.faces.areas   = fa*G.faces.areas;
+            G.faces.normals = fa*G.faces.normals;
+            G.cells.volumes = fa*G.cells.volumes;
+
+        end
         
     end
+    
     
 end
 
