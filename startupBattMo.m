@@ -4,6 +4,7 @@
 % The source code for MRST is synchronized to BattMo using git-submodule mechanisms (In the MRST directory in BattMo, you
 % should find the subdirectories given by the ``names`` cell array below)
 %
+
 global MRST_BATCH
 MRST_BATCH = true;
 
