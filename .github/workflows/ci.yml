@@ -8,9 +8,6 @@ on:
   pull_request:
     branches: [ main ]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 jobs:
   # This workflow contains a single job called "build"
   build:
@@ -29,9 +26,7 @@ jobs:
           submodules: recursive
 
       - name: Checkout submodule branch
-        run: |
-	  git submodule sync
-	  git submodule update --init --recursive --remote
+        run: git submodule update --init --recursive --remote
 
       # Sets up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
