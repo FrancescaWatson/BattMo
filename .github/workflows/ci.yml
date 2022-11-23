@@ -25,8 +25,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Checkout submodule branch
-        run: git submodule update --init --recursive --remote
+      - name: Checkout master
+        run: |
+	  cd MRST/mrst-core
+	  git checkout master
 
       # Sets up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
