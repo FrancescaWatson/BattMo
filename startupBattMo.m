@@ -5,9 +5,6 @@
 % should find the subdirectories given by the ``names`` cell array below)
 %
 
-global MRST_BATCH
-MRST_BATCH = true;
-
 rootdirname = fileparts(mfilename('fullpath'));
 
 run(fullfile(rootdirname, 'MRST', 'mrst-core',  'startup'));

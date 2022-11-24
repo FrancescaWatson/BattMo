@@ -25,19 +25,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Checkout master
-        run: |
-          cd MRST/mrst-core
-          git checkout master
+      # Use the submodules' remote-tracking branches
+      - name: Update submodules
+        run: git submodule update --remote
 
-      # Sets up MATLAB on the GitHub Actions runner
+      # Set up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
         uses: matlab-actions/setup-matlab@v1
 
-      # Use run-command to execute the tests
-      - name: Run all tests
+      # Execute the tests
+      - name: Running some tests
         uses: matlab-actions/run-command@v1
         with:
-          #command: startupBattMo; results = runtests('Tests', 'IncludeSubfolders', true); assertSuccess(results);
-          #command: disp('hello world')
-          command: startupBattMo; disp('hello world')
+          command: run('Tests/runGitHubTests.m')

@@ -30,13 +30,12 @@ classdef TestBattery1D < matlab.unittest.TestCase
                 params = [params, {'PositiveElectrode.ActiveMaterial.diffusionModelType', diffusionModelType}];
             end
 
-            % Validation doesn't run in parallel (probably due to writing to file)
-            if isempty(getCurrentTask())
-                % Validate for serial runs
-                json = updateJson(json, params);
-            else
-                json = updateJson(json, params, 'validate', false);
-            end
+            % Validation doesn't run in parallel (probably due to
+            % writing to file). It doesn't run if python is not available.
+            serial = isempty(getCurrentTask());
+            has_python = pyenv().Version ~= "";
+            validate = serial & has_python;
+            json = updateJson(json, params, 'validate', validate);
 
             paramobj = BatteryInputParams(json);
 
