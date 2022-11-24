@@ -27,7 +27,7 @@ jobs:
 
       # Use the submodules' remote-tracking branches
       - name: Update submodules
-        run: git submodule update --remote
+        run: git submodule update --init --recursive --remote
 
       # Set up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
