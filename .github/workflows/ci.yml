@@ -1,7 +1,7 @@
 # See https://github.com/matlab-actions/overview for more information
 name: MATLAB Build
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events
   push:
@@ -19,6 +19,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+        with:
+          lfs: true
 
       # # Checkout submodules
       # - name: Checkout submodules
@@ -29,6 +31,10 @@ jobs:
       # Use the submodules' remote-tracking branches
       - name: Update submodules
         run: git submodule update --init --recursive --remote
+
+      # LFS
+      - name: Checkout LFS
+        run: git lfs checkout
 
       # Set up MATLAB on the GitHub Actions runner
       - name: Setup MATLAB
