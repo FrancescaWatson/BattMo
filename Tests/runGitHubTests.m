@@ -1,5 +1,7 @@
 % Script for running tests using github actions
 
+version
+
 % Setup BattMo
 global MRST_BATCH
 MRST_BATCH = true;
