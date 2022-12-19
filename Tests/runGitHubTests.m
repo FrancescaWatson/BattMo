@@ -1,13 +1,15 @@
 % Script for running tests using github actions
 
 % Display matlab version
-version
+disp(version)
 
 % Setup BattMo
 global MRST_BATCH
 MRST_BATCH = true;
 
 run('../startupBattMo.m')
+
+mrstSettings('set', 'useMEX', false);
 
 mrstModule add ad-core mpfa
 
