@@ -76,7 +76,7 @@ classdef TestBatteryND < matlab.unittest.TestCase
             nls.timeStepSelector = StateChangeTimeStepSelector('TargetProps', {{'Control', 'E'}}, ...
                                                                'targetChangeAbs', 0.03);
             model.nonlinearTolerance = 1e-5;
-            model.verbose = false;
+            model.verbose = true;
 
             [~, states] = simulateScheduleAD(initstate, model, schedule, 'NonLinearSolver', nls);
 

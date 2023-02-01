@@ -33,7 +33,7 @@ import matlab.unittest.parameters.Parameter;
 import matlab.unittest.TestRunner
 
 % Run tests
-suite = TestSuite.fromClass(?TestBattery1D);
+suite = TestSuite.fromFolder('TestExamples');
 suite = suite.selectIf(HasParameter('Property', 'testSize', 'Value', 'short'));
 results = suite.run();
 
