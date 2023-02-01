@@ -6,8 +6,7 @@
 
 ** Running the tests (simple commands)
 
-   The tests are run using the command `runtests`. To run all the
-   tests in path, run ~runtests~.
+   The tests are run using the command `runtests`. To run all the tests in path, run ~runtests~.
 
    To run all the tests in the folder 'Tests', run ~runtests('Tests', includeSubfolders, true)~.
    
