@@ -33,8 +33,20 @@ import matlab.unittest.parameters.Parameter;
 import matlab.unittest.TestRunner
 
 % Run tests
-suite = TestSuite.fromFolder('TestExamples');
-suite = suite.selectIf(HasParameter('Property', 'testSize', 'Value', 'short'));
+%suite = TestSuite.fromFolder('TestExamples');
+%suite = suite.selectIf(HasParameter('Property', 'testSize', 'Value', 'short'));
+suite = TestSuite.fromClass(?TestBattery1D);
+params = {'Property', 'controlPolicy', 'Value', 'CCCV',...
+          'Property', 'use_thermal', 'Value', true,...
+          'Property', 'include_current_collectors', 'Value', true,...
+          'Property', 'diffusionModelType', 'Value', 'simple',...
+          'Property', 'testSize', 'Value', 'short',...
+          'Property', 'createReferenceData', 'Value', false};
+for k = 1:numel(params)/4
+    p = params((4*k-3):(4*k));
+    suite = suite.selectIf(HasParameter(p{:}));
+end
+
 results = suite.run();
 
 % Display results
