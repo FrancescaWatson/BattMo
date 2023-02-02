@@ -151,6 +151,11 @@ classdef TestBattery1D < matlab.unittest.TestCase
             model.verbose = true;
 
             %% Run the simulation
+            fprintf('initstate %s\n', md5sum(initstate));
+            fprintf('model %s\n', md5sum(model));
+            fprintf('schedule %s\n', md5sum(schedule));
+            fprintf('nls %s\n', md5sum(nls));
+
             [~, states, report] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls);
 
         end
