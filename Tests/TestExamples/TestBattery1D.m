@@ -30,23 +30,29 @@ classdef TestBattery1D < matlab.unittest.TestCase
                 params = [params, {'PositiveElectrode.ActiveMaterial.diffusionModelType', diffusionModelType}];
             end
 
-            % % Validation doesn't run in parallel (probably due to
-            % % writing to file). It doesn't run if python is not available.
-            % serial = isempty(getCurrentTask());
-            % has_python = pyenv().Version ~= "";
-            % validate = serial & has_python;
-            validate = false;
+            % Validation doesn't run in parallel (probably due to
+            % writing to file). It doesn't run if python is not
+            % available.
+            try
+                serial = isempty(getCurrentTask());
+            catch
+                serial = true;
+            end
+            has_python = pyenv().Version ~= "";
+            validate = serial & has_python;
             json = updateJson(json, params, 'validate', validate);
 
             paramobj = BatteryInputParams(json);
+            paramobj = paramobj.validateInputParams();
 
             use_cccv = strcmpi(controlPolicy, 'CCCV');
             if use_cccv
-                cccvstruct = struct( 'controlPolicy'     , 'CCCV',  ...
-                                     'CRate'             , 1         , ...
-                                     'lowerCutoffVoltage', 2.4       , ...
-                                     'upperCutoffVoltage', 4.1       , ...
-                                     'dIdtLimit'         , 0.01      , ...
+                cccvstruct = struct( 'controlPolicy'     , 'CCCV'       ,  ...
+                                     'initialControl'    , 'discharging', ...
+                                     'CRate'             , 1            , ...
+                                     'lowerCutoffVoltage', 2.4          , ...
+                                     'upperCutoffVoltage', 4.1          , ...
+                                     'dIdtLimit'         , 0.01         , ...
                                      'dEdtLimit'         , 0.01);
                 cccvparamobj = CcCvControlModelInputParams(cccvstruct);
                 paramobj.Control = cccvparamobj;
