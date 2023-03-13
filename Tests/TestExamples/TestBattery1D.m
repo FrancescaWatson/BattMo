@@ -141,17 +141,17 @@ classdef TestBattery1D < matlab.unittest.TestCase
             nls.maxIterations = 10;
             % Change default behavior of nonlinear solver, in case of error
             nls.errorOnFailure = false;
-            nls.timeStepSelector=StateChangeTimeStepSelector('TargetProps', {{'Control','E'}}, 'targetChangeAbs', 0.03);
+            nls.timeStepSelector = StateChangeTimeStepSelector('TargetProps', {{'Control','E'}}, 'targetChangeAbs', 0.03);
             % Change default tolerance for nonlinear solver
             model.nonlinearTolerance = 1e-3*model.Control.Imax;
             % Set verbosity
             model.verbose = true;
 
             %% Run the simulation
-            fprintf('initstate %s\n', md5sum(initstate));
-            fprintf('model %s\n', md5sum(model));
-            fprintf('schedule %s\n', md5sum(schedule));
-            fprintf('nls %s\n', md5sum(nls));
+            fprintf('initstate %s\n', obj2hash(initstate));
+            fprintf('model %s\n', obj2hash(model));
+            fprintf('schedule %s\n', obj2hash(schedule));
+            fprintf('nls %s\n', obj2hash(nls));
 
             [~, states] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls);
 
@@ -174,8 +174,8 @@ classdef TestBattery1D < matlab.unittest.TestCase
             else
                 obj = load(filename);
 
-                fprintf('refstate %s\n', md5sum(obj.refstate));
-                fprintf('states{end} %s\n', md5sum(states{end}));
+                fprintf('refstate %s\n', obj2hash(obj.refstate));
+                fprintf('states{end} %s\n', obj2hash(states{end}));
 
                 verifyStruct(test, states{end}, obj.refstate);
             end
