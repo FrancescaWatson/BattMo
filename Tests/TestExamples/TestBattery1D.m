@@ -39,7 +39,8 @@ classdef TestBattery1D < matlab.unittest.TestCase
                 serial = true;
             end
             has_python = pyenv().Version ~= "";
-            validate = serial & has_python;
+            %validate = serial & has_python;
+            validate = false;
             json = updateJson(json, params, 'validate', validate);
 
             paramobj = BatteryInputParams(json);

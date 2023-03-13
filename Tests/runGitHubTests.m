@@ -16,6 +16,8 @@ for k = 1:numel(dirs)
     cd(testdir)
 end
 
+pyenv
+
 % Setup BattMo
 global MRST_BATCH
 MRST_BATCH = true;
