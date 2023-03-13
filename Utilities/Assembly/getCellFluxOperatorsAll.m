@@ -33,7 +33,8 @@ function op = getCellFluxOperatorsAll(G, varargin)
     N      = sparse(I, J, reshape(sN', [], 1), dims*nc, nhf)';
     
     %%
-    if mrstPlatform('octave')
+    debug = true;
+    if mrstPlatform('octave') || debug
         warning('Octave does not yet use c-accelerated blockInverter');
         opt = struct('invertBlocks', 'matlab');
         opt = merge_options(opt, varargin{:});
