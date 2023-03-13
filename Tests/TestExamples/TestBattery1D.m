@@ -153,7 +153,9 @@ classdef TestBattery1D < matlab.unittest.TestCase
             fprintf('schedule %s\n', obj2hash(schedule));
             fprintf('nls %s\n', obj2hash(nls));
 
-            [~, states] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls);
+            fn = @(model, states, reports, solver, schedule, simtime) afterStepFunction(model, states, reports, solver, schedule, simtime);
+
+            [~, states] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls, 'verbose', true, 'afterStepFn', fn);
 
         end
 
