@@ -13,7 +13,7 @@ classdef TestBattery1D < matlab.unittest.TestCase
 
     methods
 
-        function states = test1d(test, controlPolicy, use_thermal, include_current_collectors, diffusionModelType, testSize, varargin)
+        function states = test1d(~, controlPolicy, use_thermal, include_current_collectors, diffusionModelType, testSize, varargin)
 
             jsonfile = fullfile('ParameterData','BatteryCellParameters','LithiumIonBatteryCell','lithium_ion_battery_nmc_graphite.json');
             json = parseBattmoJson(jsonfile);
@@ -58,16 +58,6 @@ classdef TestBattery1D < matlab.unittest.TestCase
                 paramobj.Control = cccvparamobj;
             end
 
-            % We define some shorthand names for simplicity.
-            ne      = 'NegativeElectrode';
-            pe      = 'PositiveElectrode';
-            elyte   = 'Electrolyte';
-            thermal = 'ThermalModel';
-            am      = 'ActiveMaterial';
-            itf     = 'Interface';
-            sd      = 'SolidDiffusion';
-            ctrl    = 'Control';
-
             %% Setup the geometry and computational mesh
             % Here, we setup the 1D computational mesh that will be used for the
             % simulation. The required discretization parameters are already included
@@ -94,7 +84,7 @@ classdef TestBattery1D < matlab.unittest.TestCase
             % Smaller time steps are used to ramp up the current from zero to its
             % operational value. Larger time steps are then used for the normal
             % operation.
-            switch model.(ctrl).controlPolicy
+            switch model.Control.controlPolicy
               case 'CCCV'
                 total = 3.5*hour/CRate;
               case 'IEswitch'
@@ -162,7 +152,7 @@ classdef TestBattery1D < matlab.unittest.TestCase
             fprintf('schedule %s\n', md5sum(schedule));
             fprintf('nls %s\n', md5sum(nls));
 
-            [~, states, report] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls);
+            [~, states] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls);
 
         end
 
@@ -181,8 +171,12 @@ classdef TestBattery1D < matlab.unittest.TestCase
                 refstate = states{end};
                 save(filename, 'refstate');
             else
-                load(filename);
-                verifyStruct(test, states{end}, refstate);
+                obj = load(filename);
+
+                fprintf('refstate %s\n', md5sum(obj.refstate));
+                fprintf('states{end} %s\n', md5sum(states{end}));
+
+                verifyStruct(test, states{end}, obj.refstate);
             end
 
         end
