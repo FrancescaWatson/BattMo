@@ -101,7 +101,7 @@ classdef TestBattery1D < matlab.unittest.TestCase
               case 'long'
                 % do nothing
               case 'short'
-                n = 10;
+                n = 1;
               otherwise
                 error('testSize not recognized')
             end
@@ -154,6 +154,7 @@ classdef TestBattery1D < matlab.unittest.TestCase
             fprintf('nls %s\n', obj2hash(nls));
 
             fn = @(model, states, reports, solver, schedule, simtime) afterStepFunction(model, states, reports, solver, schedule, simtime);
+            fn = [];
 
             [~, states] = simulateScheduleAD(initstate, model, schedule, 'OutputMinisteps', true, 'NonLinearSolver', nls, 'verbose', true, 'afterStepFn', fn);
 

@@ -4,6 +4,8 @@
 disp(version)
 
 % Debug
+%addpath('../MRST-debug')
+
 testdir = pwd;
 [~, res] = system('git rev-parse --short HEAD');
 fprintf('%s %s', pwd, res);
@@ -24,9 +26,10 @@ MRST_BATCH = true;
 
 run('../startupBattMo.m')
 
+mrstVerbose 'on';
 mrstSettings('set', 'useMEX', false);
-
 mrstModule add ad-core mpfa
+addpath('../MRST-debug')
 
 % Setup tests
 import matlab.unittest.TestSuite;
