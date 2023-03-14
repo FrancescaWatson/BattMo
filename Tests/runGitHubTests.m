@@ -4,7 +4,7 @@
 disp(version)
 
 % Debug
-%addpath('../MRST-debug')
+delete('../MRST/mrst-core/settings.mat')
 
 testdir = pwd;
 [~, res] = system('git rev-parse --short HEAD');
